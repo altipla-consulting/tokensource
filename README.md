@@ -16,6 +16,8 @@ go get github.com/altipla-consulting/tokensource
 
 ### Usage
 
+Basic usage using `HasChanged()` getter:
+
 ```go
 package main
 
@@ -40,8 +42,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  ts := tokensource.NewNotify(r.Context(), authConfig, token)
-  storeTokenInDatabase(ts)
+  storeTokenInDatabase(token)
 
   // ------------------------------------------------------------------------------
   // Everything under this comment is repeated every time you want to use the token
@@ -62,6 +63,43 @@ func updateToken(ts *tokensource.Notify) {
 
     storeTokenInDatabase(token)
   }
+}
+```
+
+Notification callback when the token updates:
+
+```go
+package main
+
+import (
+  "github.com/altipla-consulting/tokensource"
+  "golang.org/x/oauth2"
+  "golang.org/x/oauth2/slack"
+)
+
+func Handler(w http.ResponseWriter, r *http.Request) {
+  authConfig := &oauth2.Config{
+    ClientID:     "CLIENT_ID_HERE",
+    ClientSecret: "CLIENT_SECRET_HERE",
+    Scopes:       []string{"SCOPE_FOO", "SCOPE_BAR"},
+    Endpoint:     slack.Endpoint,
+    RedirectURL:  "https://www.example.com/oauth2/redirect",
+  }
+
+  token, err := authConfig.Exchange(r.Context(), r.FormValue("code"))
+  if err != nil {
+    processError(err)
+    return
+  }
+  
+  storeTokenInDatabase(token)
+
+  // ------------------------------------------------------------------------------
+  // Everything under this comment is repeated every time you want to use the token
+
+  ts := tokensource.NewNotifyHook(r.Context(), authConfig, token, storeTokenInDatabase)
+
+  // use ts.Client(r.Context()) to make the requests
 }
 ```
 

@@ -8,6 +8,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// UpdateHook is a function that can be passed to the constructor that will be
+// called when the token updates.
+type UpdateHook func(token *oauth2.Token) error
+
 // Notify is an oauth2.TokenSource that tracks changes in the token to be able to
 // store the updated token after finishing the operations.
 type Notify struct {
@@ -15,14 +19,23 @@ type Notify struct {
 	ts      oauth2.TokenSource
 	token   *oauth2.Token
 	changed bool
+	hook    UpdateHook
 }
 
-// NewNotify builds a new oauth2.TokenSource that alerts when a token changes.
+// NewNotify builds a new oauth2.TokenSource that alerts when a token changes
+// when calling HasChanged() after finishing all calls.
 func NewNotify(ctx context.Context, config *oauth2.Config, token *oauth2.Token) *Notify {
+	return NewNotifyHook(ctx, config, token, nil)
+}
+
+// NewNotifyHook builds a new oauth2.TokenSource that alerts when a token changes
+// through a hook that will be called when it happens.
+func NewNotifyHook(ctx context.Context, config *oauth2.Config, token *oauth2.Token, hook UpdateHook) *Notify {
 	return &Notify{
 		Mutex: new(sync.Mutex),
 		ts:    config.TokenSource(ctx, token),
 		token: token,
+		hook:  hook,
 	}
 }
 
@@ -41,6 +54,12 @@ func (notify *Notify) Token() (*oauth2.Token, error) {
 	if notify.token == nil || token.AccessToken != notify.token.AccessToken || token.RefreshToken != notify.token.RefreshToken {
 		notify.changed = true
 		notify.token = token
+
+		if notify.hook != nil {
+			if err := notify.hook(token); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	return token, nil
