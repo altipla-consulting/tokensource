@@ -40,7 +40,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  storeTokenInDatabase(token)
+  ts := tokensource.NewNotify(r.Context(), authConfig, token)
+  storeTokenInDatabase(ts)
 
   // ------------------------------------------------------------------------------
   // Everything under this comment is repeated every time you want to use the token
