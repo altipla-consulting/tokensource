@@ -1,6 +1,8 @@
 
 # tokensource
 
+> **DEPRECATED:** Use https://github.com/altipla-consulting/libs instead.
+
 [![GoDoc](https://godoc.org/github.com/altipla-consulting/tokensource?status.svg)](https://godoc.org/github.com/altipla-consulting/tokensource)
 [![Build Status](https://travis-ci.org/altipla-consulting/tokensource.svg?branch=master)](https://travis-ci.org/altipla-consulting/tokensource)
 
